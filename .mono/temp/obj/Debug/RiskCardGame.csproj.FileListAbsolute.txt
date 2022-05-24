@@ -1,0 +1,12 @@
+C:\Users\ozanb\Documents\RiskCardGame\.mono\temp\obj\Debug\RiskCardGame.csproj.AssemblyReference.cache
+C:\Users\ozanb\Documents\RiskCardGame\.mono\temp\obj\Debug\RiskCardGame.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ozanb\Documents\RiskCardGame\.mono\temp\obj\Debug\RiskCardGame.AssemblyInfoInputs.cache
+C:\Users\ozanb\Documents\RiskCardGame\.mono\temp\obj\Debug\RiskCardGame.AssemblyInfo.cs
+C:\Users\ozanb\Documents\RiskCardGame\.mono\temp\obj\Debug\RiskCardGame.csproj.CoreCompileInputs.cache
+C:\Users\ozanb\Documents\RiskCardGame\.mono\temp\bin\Debug\RiskCardGame.dll
+C:\Users\ozanb\Documents\RiskCardGame\.mono\temp\bin\Debug\RiskCardGame.pdb
+C:\Users\ozanb\Documents\RiskCardGame\.mono\temp\bin\Debug\MoonSharp.Interpreter.dll
+C:\Users\ozanb\Documents\RiskCardGame\.mono\temp\bin\Debug\Newtonsoft.Json.dll
+C:\Users\ozanb\Documents\RiskCardGame\.mono\temp\obj\Debug\RiskCardGame.csproj.CopyComplete
+C:\Users\ozanb\Documents\RiskCardGame\.mono\temp\obj\Debug\RiskCardGame.dll
+C:\Users\ozanb\Documents\RiskCardGame\.mono\temp\obj\Debug\RiskCardGame.pdb
