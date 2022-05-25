@@ -4,9 +4,9 @@ using MoonSharp.Interpreter;
 
 public class Card : Node2D
 {
-    private long idCount = 0;
+    private ulong idCount = 0;
 
-    public long Id { get; private set; }
+    public ulong Id { get; private set; }
     public string Tag { get; private set; }
 
     public CardType Type { get; private set; }
