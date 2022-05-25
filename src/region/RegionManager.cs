@@ -8,10 +8,13 @@ public class RegionManager : Node2D
     [Export] public byte MapWidth;
     [Export] public byte MapHeight;
 
+    public Dictionary<int, Region> Regions;
+
     public RegionManager()
     {
         if (Instance != null) return;
         Instance = this;
+        Regions = new Dictionary<int, Region>();
     }
 
     public override void _Ready()
@@ -33,6 +36,7 @@ public class RegionManager : Node2D
                 Sprite border = region.GetNode("visuals/border") as Sprite;
                 region.GlobalPosition = new Vector2(border.Texture.GetWidth() * i, border.Texture.GetHeight() * j);
 
+                Regions.Add(region.Id, region);
                 AddChild(region);
             }
         }
@@ -69,5 +73,22 @@ public class RegionManager : Node2D
     {
         if (Instance == null) return false;
         return id < Instance.MapHeight * Instance.MapWidth;
+    }
+
+    public static Region GetRegion(int id)
+    {
+        if (Instance == null)
+        {
+            GD.PushError($"Couldn't get region with id {id}. Region manager isn't in scene yet.");
+            return null;
+        }
+
+        if (!Instance.Regions.TryGetValue(id, out var region))
+        {
+            GD.PushError($"Couldn't get region with id {id}. Regions doesn't contain region with this id.");
+            return null;
+        }
+
+        return region;
     }
 }

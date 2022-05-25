@@ -19,6 +19,10 @@ public class Region : Node2D
     public List<Card> Attackers { get; private set; }
     public List<Card> Defenders { get; private set; }
 
+    public Vector2 MinBounds => new Vector2(-border.Texture.GetWidth() * Scale.x / 2f, -border.Texture.GetHeight() * Scale.y / 2f);
+    public Vector2 MaxBounds => new Vector2(border.Texture.GetWidth() * Scale.x / 2f, border.Texture.GetHeight() * Scale.y / 2f);
+
+    private Sprite border;
     private Area2D area;
     private Sprite outline;
     private RegionHUD hud;
@@ -57,6 +61,7 @@ public class Region : Node2D
         outline = GetNode("visuals/outline") as Sprite;
         area = GetNode("area") as Area2D;
         hud = GetNode("hud") as RegionHUD;
+        border = GetNode("visuals/border") as Sprite;
     }
 
     private void OnMouseEntered()

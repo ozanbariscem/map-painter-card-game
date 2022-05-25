@@ -21,6 +21,8 @@ public class Card : Node2D
     public byte Attack { get; private set; }
     public byte Defence { get; private set; }
 
+    public Region Region { get; private set; }
+
     public STATE State { get; private set; }
 
     public string ScriptPath => $"data/cards/{Tag}.lua";
@@ -40,14 +42,22 @@ public class Card : Node2D
 
     private Dictionary<ulong, Card> cardsInMyRange;
 
-    public void Initialize(string tag)
+    public void Initialize(string tag, int regionId)
     {
+        Region = RegionManager.GetRegion(regionId);
+        if (Region == null)
+        {
+            GD.PushError($"Can't initialize a card without proper region.");
+            return;
+        }
+
         isInitialized = true;
 
         Id = idCount++;
         Tag = tag;
 
         cardsInMyRange = new Dictionary<ulong, Card>();
+        GlobalPosition = Region.GlobalPosition;
 
         SetScript();
         GetScriptData();
@@ -119,7 +129,19 @@ public class Card : Node2D
     private void MoveAwayFromCard(Card card, float delta)
     {
         Vector2 distance = GlobalPosition - card.GlobalPosition;
-        GlobalPosition = GlobalPosition.LinearInterpolate(GlobalPosition + distance, moveAwaySpeed * delta);
+        Vector2 position = GlobalPosition.LinearInterpolate(GlobalPosition + distance, moveAwaySpeed * delta);
+        
+        position = new Vector2(
+            Mathf.Clamp(
+                position.x, 
+                Region.GlobalPosition.x + Region.MinBounds.x + (outline.Texture.GetWidth() * Scale.x / 2f), 
+                Region.GlobalPosition.x + Region.MaxBounds.x - (outline.Texture.GetWidth() * Scale.x / 2f)), 
+            Mathf.Clamp(
+                position.y, 
+                Region.GlobalPosition.y + Region.MinBounds.y + (outline.Texture.GetHeight() * Scale.y / 2f),
+                Region.GlobalPosition.y + Region.MaxBounds.y - (outline.Texture.GetHeight() * Scale.y / 2f)));
+        
+        GlobalPosition = position;
     }
 
     public override void _Input(InputEvent @event)
