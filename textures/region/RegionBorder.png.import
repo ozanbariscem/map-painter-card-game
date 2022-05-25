@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/RegionBorder.png-bef444c321749531bd0f336346f5f166.stex"
+path="res://.import/RegionBorder.png-98262eb251037cdc6a06652a116f1ac8.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://textures/RegionBorder.png"
-dest_files=[ "res://.import/RegionBorder.png-bef444c321749531bd0f336346f5f166.stex" ]
+source_file="res://textures/region/RegionBorder.png"
+dest_files=[ "res://.import/RegionBorder.png-98262eb251037cdc6a06652a116f1ac8.stex" ]
 
 [params]
 

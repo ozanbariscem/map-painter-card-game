@@ -5,9 +5,11 @@
 
 [node name="TestScene" type="Node2D"]
 
-[node name="CardManager" type="Node2D" parent="."]
-script = ExtResource( 1 )
-
 [node name="RegionManager2" parent="." instance=ExtResource( 2 )]
 MapWidth = 8
 MapHeight = 8
+
+[node name="CardManager" type="Node2D" parent="."]
+scale = Vector2( 1, 1.00351 )
+z_index = 10
+script = ExtResource( 1 )

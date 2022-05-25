@@ -1,9 +1,9 @@
 [gd_scene load_steps=5 format=2]
 
 [ext_resource path="res://src/region/Region.cs" type="Script" id=1]
-[ext_resource path="res://textures/RegionBorder.png" type="Texture" id=2]
+[ext_resource path="res://textures/region/RegionBorder.png" type="Texture" id=2]
 [ext_resource path="res://src/region/ui/RegionHUD.cs" type="Script" id=3]
-[ext_resource path="res://materials/Outline.tres" type="Material" id=4]
+[ext_resource path="res://materials/RegionOutline.tres" type="Material" id=4]
 
 [node name="region" type="Node2D"]
 script = ExtResource( 1 )

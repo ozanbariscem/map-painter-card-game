@@ -12,6 +12,8 @@ public class CardManager : Node2D
     public override void _Ready()
     {
         GetCards();
+        CreateCard("test_card");
+        CreateCard("test_card");
     }
 
     private void GetCards()
@@ -21,5 +23,15 @@ public class CardManager : Node2D
         {
             cards.Add(tag, 0);
         }
+    }
+
+    private void CreateCard(string tag)
+    {
+        PackedScene scene = GD.Load("card/card.tscn") as PackedScene;
+        Card card = scene.Instance() as Card;
+        card.Initialize(tag);
+        card.Scale = new Vector2(.1f, .1f);
+        AddChild(card);
+        cards[tag]++;
     }
 }
