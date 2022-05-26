@@ -25,6 +25,8 @@ public class Card : Node2D
 
     public STATE State { get; private set; }
 
+    public Player Holder { get; private set; }
+
     public string ScriptPath => $"data/cards/{Tag}.lua";
     public MoonSharp.Interpreter.Script Script { get; private set; }
 
@@ -42,12 +44,18 @@ public class Card : Node2D
 
     private Dictionary<ulong, Card> cardsInMyRange;
 
-    public void Initialize(string tag, int regionId)
+    public void Initialize(string tag, ulong holderId, int regionId)
     {
         Region = RegionManager.GetRegion(regionId);
         if (Region == null)
         {
             GD.PushError($"Can't initialize a card without proper region.");
+            return;
+        }
+        Holder = PlayerManager.GetPlayer(holderId);
+        if (Holder == null)
+        {
+            GD.PushError($"Can't initialize a card without proper owner.");
             return;
         }
 

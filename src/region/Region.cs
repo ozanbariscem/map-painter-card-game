@@ -5,6 +5,7 @@ using System.Collections.Generic;
 public class Region : Node2D
 {
     public static event Action<Region> OnReady;
+    public static event Action<Region> OnTurnDone;
     public static event Action<Region> OnMouseEnter;
     public static event Action<Region> OnMouseExit;
 
@@ -42,6 +43,7 @@ public class Region : Node2D
         area.Connect("mouse_entered", this, nameof(OnMouseEntered));
         area.Connect("mouse_exited", this, nameof(OnMouseExited));
 
+        TurnManager.OnProcessing += HandleTurnProcessing;
         OnReady?.Invoke(this);
     }
 
@@ -49,11 +51,28 @@ public class Region : Node2D
     {
         area.Disconnect("mouse_entered", this, nameof(OnMouseEntered));
         area.Disconnect("mouse_exited", this, nameof(OnMouseExited));
+
+        TurnManager.OnProcessing -= HandleTurnProcessing;
     }
 
     public void SetNeighbours(int[] neighbours)
     {
         Neighbours = neighbours;
+    }
+
+    private void HandleTurnProcessing(int turn, Player currentPlayer, Player nextPlayer)
+    {
+        // Only create on my turn
+        if (Occupier == currentPlayer)
+        {
+            CardManager.CreateRandomCard(currentPlayer.Id, Id);
+        }
+        if (Attackers.Count > 0)
+        {
+            // Simulate battle
+        }
+
+        OnTurnDone?.Invoke(this);
     }
 
     private void GetNodes()
