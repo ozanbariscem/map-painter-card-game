@@ -16,6 +16,8 @@ public class Player : Node2D
     private bool isMyTurn;
     private float turnDelta;
 
+    private bool hasChoosenStartingRegion;
+
     public override void _Ready()
     {
         if (!isInitialized)
@@ -68,6 +70,21 @@ public class Player : Node2D
 
     private void HandleMyTurn()
     {
-        RequestTurnEnd();
+        if (!hasChoosenStartingRegion)
+        {
+            ChooseStartingRegion();
+            RequestTurnEnd();
+        }
+    }
+
+    private void ChooseStartingRegion()
+    {
+        if (hasChoosenStartingRegion) return;
+
+        Region region = RegionManager.GetRandomUnoccupiedRegion();
+        if (region == null) return;
+
+        region.SetOccupier(this);
+        hasChoosenStartingRegion = true;
     }
 }

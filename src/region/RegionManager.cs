@@ -1,4 +1,6 @@
 ﻿using Godot;
+using System;
+using System.Linq;
 using System.Collections.Generic;
 
 public class RegionManager : Node2D
@@ -10,16 +12,27 @@ public class RegionManager : Node2D
 
     public Dictionary<int, Region> Regions;
 
+    private Dictionary<int, Region> unoccupiedRegions;
+
     public RegionManager()
     {
         if (Instance != null) return;
         Instance = this;
+
         Regions = new Dictionary<int, Region>();
+        unoccupiedRegions = new Dictionary<int, Region>();
     }
 
     public override void _Ready()
     {
+        Region.OnRegionOccupied += HandleRegionOccupied;
+
         CreateMap(MapWidth, MapHeight);
+    }
+
+    public override void _ExitTree()
+    {
+        Region.OnRegionOccupied -= HandleRegionOccupied;
     }
 
     private void CreateMap(byte width, byte height)
@@ -36,6 +49,7 @@ public class RegionManager : Node2D
                 Sprite border = region.GetNode("visuals/border") as Sprite;
                 region.GlobalPosition = new Vector2(border.Texture.GetWidth() * i, border.Texture.GetHeight() * j);
 
+                unoccupiedRegions.Add(region.Id, region);
                 Regions.Add(region.Id, region);
                 AddChild(region);
             }
@@ -69,6 +83,12 @@ public class RegionManager : Node2D
         return neighbours.ToArray();
     }
 
+    private void HandleRegionOccupied(Region region, Player occupier)
+    {
+        GD.Print($"Removing {region.Id}");
+        unoccupiedRegions.Remove(region.Id);
+    }
+
     public static bool IdIsInMap(int id)
     {
         if (Instance == null) return false;
@@ -90,5 +110,24 @@ public class RegionManager : Node2D
         }
 
         return region;
+    }
+
+    public static Region GetRandomUnoccupiedRegion()
+    {
+        if (Instance == null)
+        {
+            GD.PushError($"Couldn't get random unoccupied region. Region manager isn't in scene yet.");
+            return null;
+        }
+        if (Instance.unoccupiedRegions.Keys.Count == 0)
+        {
+            GD.PushError($"Couldn't get random unoccupied region. There arent any left.");
+            return null;
+        }
+
+        Random random = new Random();
+        int index = random.Next(Instance.unoccupiedRegions.Keys.Count);
+        GD.Print($"Limit: {Instance.unoccupiedRegions.Keys.Count}, Choosen: {Instance.unoccupiedRegions.Keys.ToArray()[index]}, Index: {index}");
+        return Instance.unoccupiedRegions[Instance.unoccupiedRegions.Keys.ToArray()[index]];
     }
 }

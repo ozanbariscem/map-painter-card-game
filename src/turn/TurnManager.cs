@@ -29,7 +29,6 @@ public class TurnManager : Node2D
     {
         Region.OnReady -= HandleRegionReady;
         Region.OnTurnDone -= HandleRegionTurnDone;
-
         Player.OnTurnEndRequested -= EndTurn;
         PlayerManager.OnPlayerCreated -= HandlePlayerCreated;
     }
@@ -40,8 +39,8 @@ public class TurnManager : Node2D
         {
             if (keyEvent.IsPressed() && keyEvent.Scancode == (uint)KeyList.Space)
             {
-                GD.Print("Hello?");
-                EndTurn(players[0]);
+                GD.Print($"Tried to manually end turn!");
+                EndTurn(players[TurnToPlayerIndex(Turn)]);
             }
         }
     }

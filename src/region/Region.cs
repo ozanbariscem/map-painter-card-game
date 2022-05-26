@@ -6,6 +6,7 @@ public class Region : Node2D
 {
     public static event Action<Region> OnReady;
     public static event Action<Region> OnTurnDone;
+    public static event Action<Region, Player> OnRegionOccupied;
     public static event Action<Region> OnMouseEnter;
     public static event Action<Region> OnMouseExit;
 
@@ -58,6 +59,12 @@ public class Region : Node2D
     public void SetNeighbours(int[] neighbours)
     {
         Neighbours = neighbours;
+    }
+
+    public void SetOccupier(Player occupier)
+    {
+        Occupier = occupier;
+        OnRegionOccupied?.Invoke(this, occupier);
     }
 
     private void HandleTurnProcessing(int turn, Player currentPlayer, Player nextPlayer)
