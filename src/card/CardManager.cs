@@ -38,7 +38,6 @@ public class CardManager : Node2D
         PackedScene scene = GD.Load("card/card.tscn") as PackedScene;
         Card card = scene.Instance() as Card;
         card.Initialize(tag, holderId, regionId);
-        card.Scale = new Vector2(.1f, .1f);
         AddChild(card);
         cards[tag]++;
 

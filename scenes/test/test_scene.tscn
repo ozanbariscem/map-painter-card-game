@@ -1,11 +1,20 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://src/card/CardManager.cs" type="Script" id=1]
 [ext_resource path="res://region/region_manager.tscn" type="PackedScene" id=2]
 [ext_resource path="res://player/player_manager.tscn" type="PackedScene" id=3]
 [ext_resource path="res://turn/turn_manager.tscn" type="PackedScene" id=4]
+[ext_resource path="res://camera/camera.tscn" type="PackedScene" id=5]
 
 [node name="TestScene" type="Node2D"]
+
+[node name="Camera" parent="." instance=ExtResource( 5 )]
+MouseZoomSpeed = 50.0
+KeyboardMovementSpeed = 4000.0
+KeyboardZoomSpeed = 10.0
+BorderMovementSpeed = 4000.0
+ZoomLimit = Vector2( 4, 12 )
+SlowCameraWithZoom = true
 
 [node name="TurnManager" parent="." instance=ExtResource( 4 )]
 
@@ -19,8 +28,3 @@ MapHeight = 8
 scale = Vector2( 1, 1.00351 )
 z_index = 10
 script = ExtResource( 1 )
-
-[node name="Camera2D" type="Camera2D" parent="."]
-position = Vector2( 1440, 814 )
-current = true
-zoom = Vector2( 3, 3 )

@@ -95,6 +95,9 @@ public class Card : Node2D
         hud.Connect("mouse_entered", this, nameof(HandleMouseEntered));
         hud.Connect("mouse_exited", this, nameof(HandleMouseExited));
 
+        CameraController.OnZoom += HandleCameraStateChange;
+        CameraController.OnMove += HandleCameraStateChange;
+
         if (!Script.Globals.Get("OnReady").IsNil())
             Script.Call(Script.Globals["OnReady"]);
     }
@@ -107,6 +110,9 @@ public class Card : Node2D
         hud.Disconnect("gui_input", this, nameof(HandleInputEvent));
         hud.Disconnect("mouse_entered", this, nameof(HandleMouseEntered));
         hud.Disconnect("mouse_exited", this, nameof(HandleMouseExited));
+
+        CameraController.OnZoom -= HandleCameraStateChange;
+        CameraController.OnMove -= HandleCameraStateChange;
     }
 
     public override void _Process(float delta)
@@ -170,6 +176,12 @@ public class Card : Node2D
                 return;
             }
         }
+    }
+
+    private void HandleCameraStateChange()
+    {
+        if (State != STATE.Dragging || !isClicked) return;
+        dragTarget = GetGlobalMousePosition();
     }
 
     private void HandleAreaEntered(Area2D area)

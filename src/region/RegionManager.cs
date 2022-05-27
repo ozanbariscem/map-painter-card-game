@@ -7,8 +7,13 @@ public class RegionManager : Node2D
 {
     private static RegionManager Instance;
 
+    public static event Action<Vector2, Vector2, byte, byte> OnMapCreated;
+
     [Export] public byte MapWidth;
     [Export] public byte MapHeight;
+
+    public Vector2 MapSize { get; private set; }
+    public Vector2 MapCenter => MapSize / 2f;
 
     public Dictionary<int, Region> Regions;
 
@@ -37,23 +42,32 @@ public class RegionManager : Node2D
 
     private void CreateMap(byte width, byte height)
     {
+        MapSize = new Vector2(0, 0);
         PackedScene scene = GD.Load("region/region.tscn") as PackedScene;
+        float regionWidth = 1;
+        float regionHeight = 1;
         for (int j = 0; j < height; j++)
         {
             for (int i = 0; i < width; i++)
             {
                 Region region = scene.Instance() as Region;
+                region.Scale = new Vector2(10, 10);
                 region.SetNeighbours(GetNeighbours(region.Id));
                 // Note that this would be completely irrelevant 
                 // If we were to have other region shapes than squares
                 Sprite border = region.GetNode("visuals/border") as Sprite;
-                region.GlobalPosition = new Vector2(border.Texture.GetWidth() * i, border.Texture.GetHeight() * j);
+                
+                regionWidth = border.Texture.GetWidth() * region.Scale.x;
+                regionHeight = border.Texture.GetHeight() * region.Scale.y;
+                region.GlobalPosition = new Vector2(regionWidth * i, regionHeight * j);
 
                 unoccupiedRegions.Add(region.Id, region);
                 Regions.Add(region.Id, region);
                 AddChild(region);
             }
         }
+        MapSize = new Vector2(MapWidth * regionWidth, MapHeight * regionHeight);
+        OnMapCreated?.Invoke(MapSize, MapCenter, MapWidth, MapHeight);
     }
 
     /// <summary>
@@ -85,7 +99,6 @@ public class RegionManager : Node2D
 
     private void HandleRegionOccupied(Region region, Player occupier)
     {
-        GD.Print($"Removing {region.Id}");
         unoccupiedRegions.Remove(region.Id);
     }
 
@@ -127,7 +140,6 @@ public class RegionManager : Node2D
 
         Random random = new Random();
         int index = random.Next(Instance.unoccupiedRegions.Keys.Count);
-        GD.Print($"Limit: {Instance.unoccupiedRegions.Keys.Count}, Choosen: {Instance.unoccupiedRegions.Keys.ToArray()[index]}, Index: {index}");
         return Instance.unoccupiedRegions[Instance.unoccupiedRegions.Keys.ToArray()[index]];
     }
 }
