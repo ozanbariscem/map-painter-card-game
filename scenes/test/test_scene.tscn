@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://src/card/CardManager.cs" type="Script" id=1]
 [ext_resource path="res://region/region_manager.tscn" type="PackedScene" id=2]
 [ext_resource path="res://player/player_manager.tscn" type="PackedScene" id=3]
 [ext_resource path="res://turn/turn_manager.tscn" type="PackedScene" id=4]
 [ext_resource path="res://camera/camera.tscn" type="PackedScene" id=5]
+[ext_resource path="res://src/path/PathManager.cs" type="Script" id=6]
 
 [node name="TestScene" type="Node2D"]
 
@@ -28,3 +29,6 @@ MapHeight = 8
 scale = Vector2( 1, 1.00351 )
 z_index = 10
 script = ExtResource( 1 )
+
+[node name="PathManager" type="Node2D" parent="."]
+script = ExtResource( 6 )

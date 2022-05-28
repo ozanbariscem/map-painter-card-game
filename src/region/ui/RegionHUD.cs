@@ -20,12 +20,14 @@ public class RegionHUD : Control
 
         Region.OnMouseEnter += HandleMouseEnter;
         Region.OnMouseExit += HandleMouseExit;
+        Region.OnBattlePlanChanged += HandleCardsOnRegionChanged;
     }
 
     public override void _ExitTree()
     {
         Region.OnMouseEnter -= HandleMouseEnter;
         Region.OnMouseExit -= HandleMouseExit;
+        Region.OnBattlePlanChanged -= HandleCardsOnRegionChanged;
     }
 
     public override void _Process(float delta)
@@ -36,7 +38,15 @@ public class RegionHUD : Control
     public void SetRegion(Region region)
     {
         this.region = region;
-        nameLabel.Text = region.Name;
+        UpdateHUD();
+    }
+
+    private void UpdateHUD()
+    {
+        nameLabel.Text =
+            $"{region.Id} " +
+            $"D: {region.BattlePlan[Battle.BattleSide.Defender].Count} " +
+            $"A: {region.BattlePlan[Battle.BattleSide.Attacker].Count}";
     }
 
     private void Transition(float delta)
@@ -52,6 +62,12 @@ public class RegionHUD : Control
                 state = State.Stable;
             }
         }
+    }
+
+    private void HandleCardsOnRegionChanged(Region region, Card card)
+    {
+        if (this.region != region) return;
+        UpdateHUD();
     }
 
     private void HandleMouseEnter(Region region)

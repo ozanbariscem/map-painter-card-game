@@ -30,6 +30,7 @@ scale = Vector2( 0.945, 0.96 )
 texture = ExtResource( 1 )
 
 [node name="Texture" type="Sprite" parent="Visuals"]
+visible = false
 modulate = Color( 0.603922, 0.568627, 0.568627, 1 )
 material = ExtResource( 5 )
 scale = Vector2( 0.945, 0.96 )

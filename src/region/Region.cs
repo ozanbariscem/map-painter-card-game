@@ -10,6 +10,8 @@ public class Region : Node2D
     public static event Action<Region> OnMouseEnter;
     public static event Action<Region> OnMouseExit;
 
+    public static event Action<Region, Card> OnBattlePlanChanged;
+
     private static int idCount = 0;
 
     [Export] public int Id;
@@ -18,8 +20,8 @@ public class Region : Node2D
 
     public Player Occupier { get; private set; }
 
-    public List<Card> Attackers { get; private set; }
-    public List<Card> Defenders { get; private set; }
+
+    public Dictionary<Battle.BattleSide, Dictionary<ulong, Card>> BattlePlan { get; private set; }
 
     public Vector2 MinBounds => new Vector2(-border.Texture.GetWidth() * Scale.x / 2f, -border.Texture.GetHeight() * Scale.y / 2f);
     public Vector2 MaxBounds => new Vector2(border.Texture.GetWidth() * Scale.x / 2f, border.Texture.GetHeight() * Scale.y / 2f);
@@ -32,8 +34,9 @@ public class Region : Node2D
     public Region()
     {
         Id = idCount++;
-        Attackers = new List<Card>();
-        Defenders = new List<Card>();
+        BattlePlan = new Dictionary<Battle.BattleSide, Dictionary<ulong, Card>>();
+        BattlePlan.Add(Battle.BattleSide.Attacker, new Dictionary<ulong, Card>());
+        BattlePlan.Add(Battle.BattleSide.Defender, new Dictionary<ulong, Card>());
     }
 
     public override void _Ready()
@@ -43,7 +46,8 @@ public class Region : Node2D
 
         area.Connect("mouse_entered", this, nameof(OnMouseEntered));
         area.Connect("mouse_exited", this, nameof(OnMouseExited));
-
+        
+        Card.OnRegionChanged += HandleCardRegionChanged;
         TurnManager.OnProcessing += HandleTurnProcessing;
         OnReady?.Invoke(this);
     }
@@ -53,6 +57,7 @@ public class Region : Node2D
         area.Disconnect("mouse_entered", this, nameof(OnMouseEntered));
         area.Disconnect("mouse_exited", this, nameof(OnMouseExited));
 
+        Card.OnRegionChanged -= HandleCardRegionChanged;
         TurnManager.OnProcessing -= HandleTurnProcessing;
     }
 
@@ -64,6 +69,7 @@ public class Region : Node2D
     public void SetOccupier(Player occupier)
     {
         Occupier = occupier;
+        border.Modulate = Occupier.Color;
         OnRegionOccupied?.Invoke(this, occupier);
     }
 
@@ -74,12 +80,59 @@ public class Region : Node2D
         {
             CardManager.CreateRandomCard(currentPlayer.Id, Id);
         }
-        if (Attackers.Count > 0)
+        if (BattlePlan[Battle.BattleSide.Attacker].Count > 0)
         {
             // Simulate battle
         }
 
         OnTurnDone?.Invoke(this);
+    }
+
+    private void HandleCardRegionChanged(Card card, Region oldRegion, Region newRegion)
+    {
+        if (oldRegion == this)
+        {
+            BattlePlan[Battle.BattleSide.Attacker].Remove(card.Id);
+            BattlePlan[Battle.BattleSide.Defender].Remove(card.Id);
+            OnBattlePlanChanged?.Invoke(this, card);
+        }
+        if (newRegion == this)
+        {
+            AddCard(card);
+        }
+    }
+
+    private void AddCard(Card card)
+    {
+        if (card.Type == CardType.Military)
+        {
+            if (Occupier == card.Holder || Occupier == null)
+            {
+                GD.Print($"Card {card.Id} joined {Id} on defenders side!");
+                if (BattlePlan[Battle.BattleSide.Defender].Count < Battle.BATTLE_WIDTH)
+                {
+                    BattlePlan[Battle.BattleSide.Defender].Add(card.Id, card);
+                    if (Occupier == null) SetOccupier(card.Holder);
+                }
+            }
+            else
+            {
+                if (BattlePlan[Battle.BattleSide.Defender].Count == 0)
+                {
+                    GD.Print($"Card {card.Id} joined {Id} on defenders side!");
+                    BattlePlan[Battle.BattleSide.Defender].Add(card.Id, card);
+                    SetOccupier(card.Holder);
+                } else
+                {
+                    GD.Print($"Card {card.Id} joined {Id} on attackers side!");
+                    if (BattlePlan[Battle.BattleSide.Attacker].Count < Battle.BATTLE_WIDTH)
+                    {
+                        BattlePlan[Battle.BattleSide.Attacker].Add(card.Id, card);
+                    }
+                }
+            }
+        }
+        OnBattlePlanChanged?.Invoke(this, card);
     }
 
     private void GetNodes()
@@ -90,17 +143,37 @@ public class Region : Node2D
         border = GetNode("visuals/border") as Sprite;
     }
 
+    public static bool RegionHasEmptySlotFor(Region region, Card card)
+    {
+        if (card.Type == CardType.Military)
+        {
+            if (region.Occupier == card.Holder || region.Occupier == null)
+            {
+                return (region.BattlePlan[Battle.BattleSide.Defender].Count < Battle.BATTLE_WIDTH);
+            }
+            else
+            {
+                return (region.BattlePlan[Battle.BattleSide.Attacker].Count < Battle.BATTLE_WIDTH);
+            }
+        }
+        return true;
+    }
+
+    public void Highlight(bool value)
+    {
+        outline.Visible = value;
+        ZIndex = value ? 1 : 0;
+    }
+
     private void OnMouseEntered()
     {
-        outline.Visible = true;
-        ZIndex = 1;
+        Highlight(true);
         OnMouseEnter?.Invoke(this);
     }
 
     private void OnMouseExited()
     {
-        outline.Visible = false;
-        ZIndex = 0;
+        Highlight(false);
         OnMouseExit?.Invoke(this);
     }
 }

@@ -7,12 +7,15 @@ public class Player : Node2D
 
     public static event Action<Player> OnTurnEndRequested;
 
+
     public ulong Id { get; private set; }
     public bool IsBot { get; private set; }
+    public Color Color { get; private set; }
+
 
     private bool isInitialized = false;
 
-    private static float minimumTurnProcessTime = .1f;
+    private static float minimumTurnProcessTime = .5f;
     private bool isMyTurn;
     private float turnDelta;
 
@@ -53,6 +56,7 @@ public class Player : Node2D
         isInitialized = true;
         Id = idCount++;
         IsBot = isBot;
+        Color = ColorUtils.GetRandomPlayerColor();
     }
 
     public void RequestTurnEnd()
@@ -75,6 +79,7 @@ public class Player : Node2D
             ChooseStartingRegion();
             RequestTurnEnd();
         }
+        RequestTurnEnd();
     }
 
     private void ChooseStartingRegion()

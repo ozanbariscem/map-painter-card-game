@@ -39,7 +39,7 @@ public class TurnManager : Node2D
         {
             if (keyEvent.IsPressed() && keyEvent.Scancode == (uint)KeyList.Space)
             {
-                GD.Print($"Tried to manually end turn!");
+                GD.Print($"Tried to manually end turn {Turn}!");
                 EndTurn(players[TurnToPlayerIndex(Turn)]);
             }
         }
