@@ -12,6 +12,8 @@ public class CardManager : Node2D
     private Dictionary<string, ushort> cards; // Tag -> Amount of cards created with this tag
     private string[] tags;
 
+    private YSort ySort;
+
     public CardManager()
     {
         if (Instance != null) return;
@@ -20,6 +22,7 @@ public class CardManager : Node2D
 
     public override void _Ready()
     {
+        ySort = GetNode("YSort") as YSort;
         GetCards();
     }
 
@@ -38,7 +41,7 @@ public class CardManager : Node2D
         PackedScene scene = GD.Load("card/card.tscn") as PackedScene;
         Card card = scene.Instance() as Card;
         card.Initialize(tag, holderId, regionId);
-        AddChild(card);
+        ySort.AddChild(card);
         cards[tag]++;
 
         return card;

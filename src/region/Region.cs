@@ -20,7 +20,6 @@ public class Region : Node2D
 
     public Player Occupier { get; private set; }
 
-
     public Dictionary<Battle.BattleSide, Dictionary<ulong, Card>> BattlePlan { get; private set; }
 
     public Vector2 MinBounds => new Vector2(-border.Texture.GetWidth() * Scale.x / 2f, -border.Texture.GetHeight() * Scale.y / 2f);
@@ -46,8 +45,10 @@ public class Region : Node2D
 
         area.Connect("mouse_entered", this, nameof(OnMouseEntered));
         area.Connect("mouse_exited", this, nameof(OnMouseExited));
-        
+
+        Card.OnDeath += HandleCardDeath;
         Card.OnRegionChanged += HandleCardRegionChanged;
+        Battle.OnAttackerWin += HandleAttackerWin;
         TurnManager.OnProcessing += HandleTurnProcessing;
         OnReady?.Invoke(this);
     }
@@ -57,7 +58,9 @@ public class Region : Node2D
         area.Disconnect("mouse_entered", this, nameof(OnMouseEntered));
         area.Disconnect("mouse_exited", this, nameof(OnMouseExited));
 
+        Card.OnDeath -= HandleCardDeath;
         Card.OnRegionChanged -= HandleCardRegionChanged;
+        Battle.OnAttackerWin -= HandleAttackerWin;
         TurnManager.OnProcessing -= HandleTurnProcessing;
     }
 
@@ -73,16 +76,37 @@ public class Region : Node2D
         OnRegionOccupied?.Invoke(this, occupier);
     }
 
+    private void HandleAttackerWin(Region region, Player defender, Player attacker)
+    {
+        if (region != this) return;
+
+        if (BattlePlan[Battle.BattleSide.Defender].Count > 0)
+        {
+            GD.PushError($"Attackers won in this region but there are still defenders live?");
+            return;
+        }
+        SetOccupier(attacker);
+        BattlePlan[Battle.BattleSide.Defender].Clear();
+        foreach (var card in BattlePlan[Battle.BattleSide.Attacker].Values)
+        {
+            BattlePlan[Battle.BattleSide.Defender].Add(card.Id, card);
+        }
+        BattlePlan[Battle.BattleSide.Attacker].Clear();
+    }
+
     private void HandleTurnProcessing(int turn, Player currentPlayer, Player nextPlayer)
     {
         // Only create on my turn
-        if (Occupier == currentPlayer)
+        if (Occupier == currentPlayer && BattlePlan[Battle.BattleSide.Defender].Count < Battle.BATTLE_WIDTH)
         {
             CardManager.CreateRandomCard(currentPlayer.Id, Id);
         }
         if (BattlePlan[Battle.BattleSide.Attacker].Count > 0)
         {
-            // Simulate battle
+            BattleManager.Instance.CreateBattle(
+                this, 
+                BattlePlan[Battle.BattleSide.Attacker], 
+                BattlePlan[Battle.BattleSide.Defender]);
         }
 
         OnTurnDone?.Invoke(this);
@@ -102,13 +126,24 @@ public class Region : Node2D
         }
     }
 
+    private void HandleCardDeath(Card card)
+    {
+        if (card.Region == this)
+        {
+            if (card.Type == CardType.Military)
+            {
+                BattlePlan[Battle.BattleSide.Attacker].Remove(card.Id);
+                BattlePlan[Battle.BattleSide.Defender].Remove(card.Id);
+            }
+        }
+    }
+
     private void AddCard(Card card)
     {
         if (card.Type == CardType.Military)
         {
             if (Occupier == card.Holder || Occupier == null)
             {
-                GD.Print($"Card {card.Id} joined {Id} on defenders side!");
                 if (BattlePlan[Battle.BattleSide.Defender].Count < Battle.BATTLE_WIDTH)
                 {
                     BattlePlan[Battle.BattleSide.Defender].Add(card.Id, card);
@@ -119,12 +154,10 @@ public class Region : Node2D
             {
                 if (BattlePlan[Battle.BattleSide.Defender].Count == 0)
                 {
-                    GD.Print($"Card {card.Id} joined {Id} on defenders side!");
                     BattlePlan[Battle.BattleSide.Defender].Add(card.Id, card);
                     SetOccupier(card.Holder);
                 } else
                 {
-                    GD.Print($"Card {card.Id} joined {Id} on attackers side!");
                     if (BattlePlan[Battle.BattleSide.Attacker].Count < Battle.BATTLE_WIDTH)
                     {
                         BattlePlan[Battle.BattleSide.Attacker].Add(card.Id, card);

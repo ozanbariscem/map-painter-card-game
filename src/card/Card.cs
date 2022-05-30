@@ -5,8 +5,9 @@ using System.Collections.Generic;
 
 public class Card : Node2D
 {
-    public enum STATE { Idle, Dragging }
+    public enum STATE { Idle, Dragging, MovingToTarget, ReadyToAttack, Attack, Attacked, Retrieve, Defending, Dying }
 
+    public static event Action<Card> OnDeath;
     public static event Action<Card> OnClicked;
     public static event Action<Card, Region, Region> OnRegionChanged;
 
@@ -21,6 +22,8 @@ public class Card : Node2D
 
     public byte Attack { get; private set; }
     public byte Defence { get; private set; }
+
+    public float Range { get; private set; }
 
     public Region Region { get; private set; }
 
@@ -52,6 +55,13 @@ public class Card : Node2D
     private Dictionary<ulong, Card> cardsInMyRange;
     private Dictionary<int, Region> hoveringRegions;
     private Region closestRegion;
+
+    private bool shake;
+    private static float shakeTime = .2f;
+    private float shakeDelta;
+
+    public Card Target { get; private set; }
+    private float attackSpeed = 1500;
 
     public void Initialize(string tag, ulong holderId, int regionId)
     {
@@ -97,6 +107,8 @@ public class Card : Node2D
             QueueFree();
             return;
         }
+
+        Range = GlobalPosition.DistanceTo(GlobalPosition + new Vector2(border.Texture.GetWidth() / 2f, border.Texture.GetHeight() / 2f));
         Subscribe();
 
         if (!Script.Globals.Get("OnReady").IsNil())
@@ -110,19 +122,57 @@ public class Card : Node2D
 
     public override void _Process(float delta)
     {
+        if (shake)
+        {
+            shakeDelta += delta;
+            if (shakeDelta > shakeTime)
+            {
+                shake = false;
+                shakeDelta = 0;
+                GlobalRotationDegrees = 0;
+            }
+            else
+            {
+                Shake(delta);
+            }
+        }
+
         switch (State)
         {
             case STATE.Idle:
                 foreach (var card in cardsInMyRange.Values)
                 {
+                    // Ignore the poor thing
+                    if (card.State == STATE.Dying) continue;
                     MoveAwayFromCard(card, delta);
                 }
-                ClampPosition();
                 break;
             case STATE.Dragging:
                 DragToTarget(dragTarget, delta);
                 break;
+            case STATE.MovingToTarget:
+                MoveToTarget(delta);
+                break;
+            case STATE.ReadyToAttack:
+                AttackTarget(delta);
+                break;
+            case STATE.Retrieve:
+                RetrieveFromTarget(delta);
+                break;
+            case STATE.Dying:
+                Scale -= Vector2.One * delta;
+                if (Scale.LengthSquared() < .05f)
+                    QueueFree();
+                break;
         }
+        if (State != STATE.Retrieve && State != STATE.Dragging) ClampPosition();
+    }
+
+    private void Shake(float delta)
+    {
+        Random random = new Random();
+        float newAngle = GlobalRotationDegrees + random.Next(-20, 20);
+        GlobalRotationDegrees = Mathf.Lerp(GlobalRotationDegrees, newAngle, 10 * delta);
     }
 
     private void DragToTarget(Vector2 target, float delta)
@@ -130,7 +180,7 @@ public class Card : Node2D
         GlobalPosition = GlobalPosition.LinearInterpolate(target+dragOffset, dragSpeed * delta);
         if (!isClicked && GlobalPosition.DistanceTo(target+dragOffset) < 5f)
         {
-            State = STATE.Idle;
+            SetState(STATE.Idle);
         }
     }
 
@@ -198,6 +248,96 @@ public class Card : Node2D
         }
     }
 
+    public void SetTarget(Card card)
+    {
+        Target = card;
+        if (card == null)
+        {
+            ZIndex = 10;
+            SetState(STATE.Idle);
+            return;
+        }
+
+        ZIndex = 11;
+        if (!IsCloseToTarget())
+            SetState(STATE.MovingToTarget);
+        else
+            SetState(STATE.ReadyToAttack);
+    }
+
+    private void MoveToTarget(float delta)
+    {
+        GlobalPosition = GlobalPosition.MoveToward(Target.GlobalPosition, attackSpeed * delta);
+        if (IsCloseToTarget())
+        {
+            SetState(STATE.ReadyToAttack);
+        }
+    }
+
+    private bool IsCloseToTarget()
+    {
+        if (GlobalPosition.DistanceTo(Target.GlobalPosition) < Range + Target.Range) return true;
+        return false;
+    }
+
+    private void AttackTarget(float delta)
+    {
+        Vector2 distance = GlobalPosition - Target.GlobalPosition;
+        distance = distance.Normalized().Round();
+        GlobalPosition = GlobalPosition.MoveToward(Target.GlobalPosition + distance, attackSpeed * delta);
+        if (GlobalPosition.DistanceTo(Target.GlobalPosition) < 5)
+        {
+            SetState(STATE.Attacked);
+        }
+    }
+
+    private void RetrieveFromTarget(float delta)
+    {
+        Vector2 distance = GlobalPosition - Target.GlobalPosition;
+        GlobalPosition = GlobalPosition.MoveToward(GlobalPosition + distance, attackSpeed * delta);
+        if (GlobalPosition.DistanceTo(Target.GlobalPosition) >= Range / 2f)
+        {
+            SetState(STATE.MovingToTarget);
+        }
+    }
+
+    public bool TakeDamage(Card from)
+    {
+        shake = true;
+        int defence = Defence - from.Attack;
+
+        if (from.Attack > Attack)
+            MoveAwayFromCard(from, from.Attack * 2);
+
+        Defence = defence > 0 ? (byte)defence : (byte)0;
+        UpdateStats();
+
+        if (Defence <= 0)
+        {
+            Die();
+            return true;
+        }
+        return false;
+    }
+
+    public void SetState(STATE state)
+    {
+        if (State == STATE.Dying)
+        {
+            GD.PushError($"Tried to change state but i'm dead.");
+            return;
+        }
+
+        State = state;
+    }
+
+    private void Die()
+    {
+        ZIndex = 12;
+        SetState(STATE.Dying);
+        OnDeath?.Invoke(this);
+    }
+
     private void HandleCameraStateChange()
     {
         if (State != STATE.Dragging || !isClicked) return;
@@ -258,7 +398,7 @@ public class Card : Node2D
 
         dragOffset = GlobalPosition - GetGlobalMousePosition();
         dragTarget = GetGlobalMousePosition();
-        State = STATE.Dragging;
+        SetState(STATE.Dragging);
         isClicked = true;
         OnClicked?.Invoke(this);
     }
@@ -266,11 +406,13 @@ public class Card : Node2D
     private void HandleMouseEntered()
     {
         outline.Visible = true;
+        ZIndex = 11;
     }
 
     private void HandleMouseExited()
     {
         outline.Visible = false;
+        ZIndex = 10;
     }
 
     private void HandleHoveringOverRegions()
@@ -299,11 +441,22 @@ public class Card : Node2D
         PathManager.DrawPath(GlobalPosition, closestRegion.GlobalPosition);
     }
 
+    private void HandleDeath(Card card)
+    {
+        // If i'm dying
+        if (State == STATE.Dying) return;
+
+        // If my target is dead
+        if (card == Target)
+        {
+            SetTarget(null);
+        }
+    }
+
     private void SetRegion(Region region)
     {
         if (!CanMoveTo(this, region))
         {
-            GD.Print($"Can't move to this region!");
             return;
         }
         Region oldRegion = Region;
@@ -346,7 +499,7 @@ public class Card : Node2D
         border.Modulate = Holder.Color;
         background.Modulate = ColorUtils.CardColors[Type];
 
-        titleLabel.Text = $"{Title}";
+        titleLabel.Text = $"{Title} ({Id})";
         attackLabel.Text = $"{Attack}";
         defenceLabel.Text = $"{Defence}";
     }
@@ -360,6 +513,7 @@ public class Card : Node2D
         hud.Connect("mouse_entered", this, nameof(HandleMouseEntered));
         hud.Connect("mouse_exited", this, nameof(HandleMouseExited));
 
+        OnDeath += HandleDeath;
         CameraController.OnZoom += HandleCameraStateChange;
         CameraController.OnMove += HandleCameraStateChange;
     }
@@ -373,8 +527,15 @@ public class Card : Node2D
         hud.Disconnect("mouse_entered", this, nameof(HandleMouseEntered));
         hud.Disconnect("mouse_exited", this, nameof(HandleMouseExited));
 
+        OnDeath -= HandleDeath;
         CameraController.OnZoom -= HandleCameraStateChange;
         CameraController.OnMove -= HandleCameraStateChange;
+    }
+
+    private void UpdateStats()
+    {
+        attackLabel.Text = $"{Attack}";
+        defenceLabel.Text = $"{Defence}";
     }
 
     public static bool CanMoveTo(Card card, Region region)

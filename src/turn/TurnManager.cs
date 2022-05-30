@@ -4,25 +4,40 @@ using System.Collections.Generic;
 
 public class TurnManager : Node2D
 {
+    public static TurnManager Instance { get; private set; }
+
     public enum TurnState { WaitingForPlayer, Processing }
 
     public static event Action<int, Player, Player> OnProcessing;
     public static event Action<int, Player, Player> OnWaitingForPlayer;
 
+    [Export] public bool Debug = false;
+
     public TurnState State { get; private set; }
-    public int Turn = 0;
+    public int Turn { get; private set; } = 0;
 
     private List<Player> players;
     
     private int regionCount = 0;
     private int doneRegionCount = 0;
-    
+
+    private bool processTurn;
+    private bool regionsAreDone;
+    private bool battleManagerIsDone;
+
+    public TurnManager()
+    {
+        if (Instance != null) return;
+        Instance = this;
+    }
+
     public override void _Ready()
     {
         Region.OnReady += HandleRegionReady;
         Region.OnTurnDone += HandleRegionTurnDone;
         Player.OnTurnEndRequested += EndTurn;
         PlayerManager.OnPlayerCreated += HandlePlayerCreated;
+        BattleManager.OnTurnDone += HandleBattleManagerTurnDone;
     }
 
     public override void _ExitTree()
@@ -31,6 +46,7 @@ public class TurnManager : Node2D
         Region.OnTurnDone -= HandleRegionTurnDone;
         Player.OnTurnEndRequested -= EndTurn;
         PlayerManager.OnPlayerCreated -= HandlePlayerCreated;
+        BattleManager.OnTurnDone -= HandleBattleManagerTurnDone;
     }
 
     public override void _Input(InputEvent @event)
@@ -39,8 +55,19 @@ public class TurnManager : Node2D
         {
             if (keyEvent.IsPressed() && keyEvent.Scancode == (uint)KeyList.Space)
             {
-                GD.Print($"Tried to manually end turn {Turn}!");
-                EndTurn(players[TurnToPlayerIndex(Turn)]);
+                processTurn = !processTurn;
+                if (processTurn)
+                {
+                    GD.PushError($"Continued Turn Manager");
+                    if (!CheckIfProcessingIsDone())
+                    {
+                        GD.PushError($"Manually ended turn {Turn}. This could be dangerous since processing was NOT done yet.");
+                        EndTurn(players[TurnToPlayerIndex(Turn)]);
+                    }
+                } else
+                {
+                    GD.PushError($"Stopped Turn Manager");
+                }
             }
         }
     }
@@ -58,7 +85,7 @@ public class TurnManager : Node2D
             return;
         }
 
-        GD.Print($"Turn {Turn} processing!");
+        if (Debug) GD.Print($"Turn {Turn} processing!");
         OnProcessing?.Invoke(Turn, players[TurnToPlayerIndex(Turn)], players[TurnToPlayerIndex(Turn+1)]);
     }
 
@@ -78,15 +105,35 @@ public class TurnManager : Node2D
     private void HandleRegionTurnDone(Region region)
     {
         doneRegionCount += 1;
-
         if (doneRegionCount == regionCount)
         {
+            regionsAreDone = true;
+            if (Debug) GD.Print($"Regions are done for turn {Turn}.");
+            CheckIfProcessingIsDone();
+        }
+    }
+
+    private void HandleBattleManagerTurnDone()
+    {
+        battleManagerIsDone = true;
+        if (Debug) GD.Print($"Battles are done for turn {Turn}.");
+        CheckIfProcessingIsDone();
+    }
+
+    private bool CheckIfProcessingIsDone()
+    {
+        if (regionsAreDone && battleManagerIsDone && processTurn)
+        {
+            regionsAreDone = false;
+            battleManagerIsDone = false;
             doneRegionCount = 0;
 
             Turn++;
-            GD.Print($"Turn {Turn} started!");
-            OnWaitingForPlayer?.Invoke(Turn, players[TurnToPlayerIndex(Turn-1)], players[TurnToPlayerIndex(Turn)]);
+            if (Debug) GD.Print($"Turn {Turn} started!");
+            OnWaitingForPlayer?.Invoke(Turn, players[TurnToPlayerIndex(Turn - 1)], players[TurnToPlayerIndex(Turn)]);
+            return true;
         }
+        return false;
     }
 
     private int TurnToPlayerIndex(int turn)

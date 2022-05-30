@@ -56,7 +56,7 @@ namespace Utils
             UserData.RegisterType<CardType>();
             var script = new MoonSharp.Interpreter.Script();
 
-            script.Globals["CardType"] = UserData.CreateStatic<CardType>();
+            script.Globals[nameof(CardType)] = UserData.CreateStatic<CardType>();
 
             script.Globals["Log"] = (Action<object[]>)GD.Print;
             script.Globals["LogError"] = (Action<string>)GD.PushError;
