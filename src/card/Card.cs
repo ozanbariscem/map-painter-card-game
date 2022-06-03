@@ -16,15 +16,16 @@ public class Card : Node2D
 
     public ulong Id { get; private set; }
     public string Tag { get; private set; }
+    public CardData Data { get; private set; }
 
-    public CardType Type { get; private set; }
-    public string Title { get; private set; }
-    public string Description { get; private set; }
+    public CardType Type => Data.Type;
+    public string Title => Data.Title;
+    public string Description => Data.Description;
 
-    public ushort Price { get; private set; }
-    public ushort Upkeep { get; private set; }
+    public ushort Price => Data.Price;
+    public ushort Upkeep => Data.Upkeep;
 
-    public byte Attack { get; private set; }
+    public byte Attack => Data.Attack;
     public byte Defence { get; private set; }
 
     public float Range { get; private set; }
@@ -35,8 +36,7 @@ public class Card : Node2D
 
     public Player Holder { get; private set; }
 
-    public string ScriptPath => $"data/cards/{Tag}.lua";
-    public MoonSharp.Interpreter.Script Script { get; private set; }
+    public MoonSharp.Interpreter.Script Script => Data.Script;
 
     private bool isClicked;
     private bool isInitialized;
@@ -67,7 +67,7 @@ public class Card : Node2D
     public Card Target { get; private set; }
     private float attackSpeed = 1500;
 
-    public void Initialize(string tag, ulong holderId, int regionId)
+    public void Initialize(string tag, CardData data, ulong holderId, int regionId)
     {
         Region region = RegionManager.GetRegion(regionId);
         if (region == null)
@@ -86,13 +86,13 @@ public class Card : Node2D
 
         Id = idCount++;
         Tag = tag;
+        Data = data;
+        Defence = Data.Defence;
 
         cardsInMyRange = new Dictionary<ulong, Card>();
         hoveringRegions = new Dictionary<int, Region>();
 
         SetRegion(region);
-        SetScript();
-        GetScriptData();
         GetNodes();
         SetNodeValues();
 
@@ -474,24 +474,6 @@ public class Card : Node2D
         if (oldRegion == null) GlobalPosition = Region.GlobalPosition; // First time being assigned to a region
         OnRegionChanged?.Invoke(this, oldRegion, Region);
         return true;
-    }
-
-    private void SetScript()
-    {
-        Script = Utils.ContentUtils.GetScript(ScriptPath);
-    }
-
-    private void GetScriptData()
-    {
-        Type = (CardType)Script.Globals.Get("type").Number;
-        Title = Script.Globals.Get("title").String;
-        Description = Script.Globals.Get("description").String;
-        
-        Price = (ushort)Script.Globals.Get("price").Number;
-        Upkeep = (ushort)Script.Globals.Get("upkeep").Number;
-
-        Attack = (byte)Script.Globals.Get("attack").Number;
-        Defence = (byte)Script.Globals.Get("defence").Number;
     }
 
     private void GetNodes()

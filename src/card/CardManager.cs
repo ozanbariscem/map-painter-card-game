@@ -5,11 +5,13 @@ using System.Collections.Generic;
 
 public class CardManager : Node2D
 {
+    public static event Action<List<CardData>> OnCardDatasInitialized;
+
     private static CardManager Instance;
 
     public string CardsPath => $"data/cards";
 
-    private Dictionary<string, ushort> cards; // Tag -> Amount of cards created with this tag
+    private Dictionary<string, CardData> datas;
     private string[] tags;
 
     private YSort ySort;
@@ -28,21 +30,29 @@ public class CardManager : Node2D
 
     private void GetCards()
     {
-        cards = new Dictionary<string, ushort>();
+        datas = new Dictionary<string, CardData>();
         foreach (var tag in Utils.ContentUtils.GetScriptNamesOnFolder(CardsPath))
         {
-            cards.Add(tag, 0);
+            datas.Add(tag, new CardData(tag));
         }
-        tags = cards.Keys.ToArray();
+        tags = datas.Keys.ToArray();
+        OnCardDatasInitialized?.Invoke(datas.Values.ToList());
     }
 
-    private Card CreateCard(string tag, ulong holderId, int regionId)
+    public static Card CreateCard(string tag, ulong holderId, int regionId)
     {
+        if (Instance == null)
+        {
+            GD.PushError($"Can't create card because there are no CardManagers active in the scene.");
+            return null;
+        }
+
+        if (!Instance.datas.TryGetValue(tag, out var data)) return null;
+
         PackedScene scene = GD.Load("card/card.tscn") as PackedScene;
         Card card = scene.Instance() as Card;
-        card.Initialize(tag, holderId, regionId);
-        ySort.AddChild(card);
-        cards[tag]++;
+        card.Initialize(tag, data, holderId, regionId);
+        Instance.ySort.AddChild(card);
 
         return card;
     }
@@ -56,6 +66,6 @@ public class CardManager : Node2D
         }
         Random random = new Random();
         string tag = Instance.tags[random.Next(Instance.tags.Length)];
-        return Instance.CreateCard(tag, playerId, regionId);
+        return CreateCard(tag, playerId, regionId);
     }
 }
