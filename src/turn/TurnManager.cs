@@ -8,8 +8,8 @@ public class TurnManager : Node2D
 
     public enum TurnState { WaitingForPlayer, Processing }
 
-    public static event Action<int, Player, Player> OnProcessing;
-    public static event Action<int, Player, Player> OnWaitingForPlayer;
+    public static event Action<int, Player, Player> OnProcessing; // int: turn, player: current player, player: next player
+    public static event Action<int, Player, Player> OnWaitingForPlayer; // int: turn, player: ex player, player: current player
 
     [Export] public bool Debug = false;
 
@@ -70,6 +70,14 @@ public class TurnManager : Node2D
                 }
             }
         }
+    }
+
+    public void EndTurn()
+    {
+        Player player = players[TurnToPlayerIndex(Turn)];
+        if (player.IsBot) return; // Can't make that choice
+
+        EndTurn(player);
     }
 
     private void EndTurn(Player player)

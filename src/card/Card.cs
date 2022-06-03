@@ -8,6 +8,7 @@ public class Card : Node2D
     public enum STATE { Idle, Dragging, MovingToTarget, ReadyToAttack, Attack, Attacked, Retrieve, Defending, Dying }
 
     public static event Action<Card> OnDeath;
+    public static event Action<Card> OnCreated;
     public static event Action<Card> OnClicked;
     public static event Action<Card, Region, Region> OnRegionChanged;
 
@@ -92,6 +93,7 @@ public class Card : Node2D
         GetNodes();
         SetNodeValues();
 
+        OnCreated?.Invoke(this);
         if (!Script.Globals.Get("OnInitialized").IsNil())
             Script.Call(Script.Globals["OnInitialized"]);
     }
@@ -453,16 +455,17 @@ public class Card : Node2D
         }
     }
 
-    private void SetRegion(Region region)
+    public bool SetRegion(Region region)
     {
         if (!CanMoveTo(this, region))
         {
-            return;
+            return false;
         }
         Region oldRegion = Region;
         Region = region;
         if (oldRegion == null) GlobalPosition = Region.GlobalPosition; // First time being assigned to a region
         OnRegionChanged?.Invoke(this, oldRegion, Region);
+        return true;
     }
 
     private void SetScript()

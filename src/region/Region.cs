@@ -96,11 +96,6 @@ public class Region : Node2D
 
     private void HandleTurnProcessing(int turn, Player currentPlayer, Player nextPlayer)
     {
-        // Only create on my turn
-        if (Occupier == currentPlayer && BattlePlan[Battle.BattleSide.Defender].Count < Battle.BATTLE_WIDTH)
-        {
-            CardManager.CreateRandomCard(currentPlayer.Id, Id);
-        }
         if (BattlePlan[Battle.BattleSide.Attacker].Count > 0)
         {
             BattleManager.Instance.CreateBattle(
@@ -108,7 +103,6 @@ public class Region : Node2D
                 BattlePlan[Battle.BattleSide.Attacker], 
                 BattlePlan[Battle.BattleSide.Defender]);
         }
-
         OnTurnDone?.Invoke(this);
     }
 

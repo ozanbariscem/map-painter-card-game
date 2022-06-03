@@ -4,22 +4,29 @@ using System;
 public class Player : Node2D
 {
     private static ulong idCount = 0;
-
     public static event Action<Player> OnTurnEndRequested;
-
+    
+    public static event Action<Player> OnGoldChanged;
 
     public ulong Id { get; private set; }
     public bool IsBot { get; private set; }
     public Color Color { get; private set; }
 
+    public ushort Gold 
+    { 
+        get => gold; 
+        private set
+        {
+            gold = value;
+            OnGoldChanged?.Invoke(this);
+        }
+    }
+
+    private ushort gold;
+
+    public AIBrain AIBrain { get; private set; }
 
     private bool isInitialized = false;
-
-    private static float minimumTurnProcessTime = .5f;
-    private bool isMyTurn;
-    private float turnDelta;
-
-    private bool hasChoosenStartingRegion;
 
     public override void _Ready()
     {
@@ -27,28 +34,11 @@ public class Player : Node2D
         {
             GD.PushError($"Tried to create a player with id {Id} named {Name}. This is not allowed, please create player using PlayerManager API.");
         }
-
-        TurnManager.OnWaitingForPlayer += HandleTurnWaitingForPlayer;
-    }
-
-    public override void _ExitTree()
-    {
-        TurnManager.OnWaitingForPlayer -= HandleTurnWaitingForPlayer;
     }
 
     public override void _Process(float delta)
     {
-        if (isMyTurn)
-        {
-            turnDelta += delta;
-
-            if (turnDelta >= minimumTurnProcessTime)
-            {
-                isMyTurn = false;
-                turnDelta = 0;
-                HandleMyTurn();
-            }
-        }
+        AIBrain.Process(delta);
     }
 
     public void Initialize(bool isBot)
@@ -57,39 +47,12 @@ public class Player : Node2D
         Id = idCount++;
         IsBot = isBot;
         Color = ColorUtils.GetRandomPlayerColor();
+
+        AIBrain = new AIBrain(this);
     }
 
     public void RequestTurnEnd()
     {
         OnTurnEndRequested?.Invoke(this);
-    }
-
-    private void HandleTurnWaitingForPlayer(int turn, Player previousPlayer, Player currentPlayer)
-    {
-        if (!IsBot) return;
-        if (currentPlayer != this) return;
-
-        isMyTurn = true;
-    }
-
-    private void HandleMyTurn()
-    {
-        if (!hasChoosenStartingRegion)
-        {
-            ChooseStartingRegion();
-            RequestTurnEnd();
-        }
-        RequestTurnEnd();
-    }
-
-    private void ChooseStartingRegion()
-    {
-        if (hasChoosenStartingRegion) return;
-
-        Region region = RegionManager.GetRandomUnoccupiedRegion();
-        if (region == null) return;
-
-        region.SetOccupier(this);
-        hasChoosenStartingRegion = true;
     }
 }
