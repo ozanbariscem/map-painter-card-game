@@ -21,6 +21,9 @@ public class Card : Node2D
     public string Title { get; private set; }
     public string Description { get; private set; }
 
+    public ushort Price { get; private set; }
+    public ushort Upkeep { get; private set; }
+
     public byte Attack { get; private set; }
     public byte Defence { get; private set; }
 
@@ -455,6 +458,11 @@ public class Card : Node2D
         }
     }
 
+    private void HandleTurnProcessing(int turn, Player currentPlayer, Player nextPlayer)
+    {
+        if (Holder != null && Holder == currentPlayer) Holder.TakeGold(Upkeep);
+    }
+
     public bool SetRegion(Region region)
     {
         if (!CanMoveTo(this, region))
@@ -478,6 +486,9 @@ public class Card : Node2D
         Type = (CardType)Script.Globals.Get("type").Number;
         Title = Script.Globals.Get("title").String;
         Description = Script.Globals.Get("description").String;
+        
+        Price = (ushort)Script.Globals.Get("price").Number;
+        Upkeep = (ushort)Script.Globals.Get("upkeep").Number;
 
         Attack = (byte)Script.Globals.Get("attack").Number;
         Defence = (byte)Script.Globals.Get("defence").Number;
@@ -517,6 +528,7 @@ public class Card : Node2D
         hud.Connect("mouse_exited", this, nameof(HandleMouseExited));
 
         OnDeath += HandleDeath;
+        TurnManager.OnProcessing += HandleTurnProcessing;
         CameraController.OnZoom += HandleCameraStateChange;
         CameraController.OnMove += HandleCameraStateChange;
     }
@@ -531,6 +543,7 @@ public class Card : Node2D
         hud.Disconnect("mouse_exited", this, nameof(HandleMouseExited));
 
         OnDeath -= HandleDeath;
+        TurnManager.OnProcessing -= HandleTurnProcessing;
         CameraController.OnZoom -= HandleCameraStateChange;
         CameraController.OnMove -= HandleCameraStateChange;
     }

@@ -18,6 +18,8 @@ public class Region : Node2D
     // We can't export ulong arrays on Godot but i'm pretty sure we wont need an id bigger than 2,147,483,647
     [Export] public int[] Neighbours = { 0 };
 
+    public byte Income { get; private set; }
+
     public Player Occupier { get; private set; }
 
     public Dictionary<Battle.BattleSide, Dictionary<ulong, Card>> BattlePlan { get; private set; }
@@ -33,6 +35,10 @@ public class Region : Node2D
     public Region()
     {
         Id = idCount++;
+        Random random = new Random();
+        Income = (byte)(random.Next(2) + 1);
+        Name = $"Region ({Id})";
+
         BattlePlan = new Dictionary<Battle.BattleSide, Dictionary<ulong, Card>>();
         BattlePlan.Add(Battle.BattleSide.Attacker, new Dictionary<ulong, Card>());
         BattlePlan.Add(Battle.BattleSide.Defender, new Dictionary<ulong, Card>());
@@ -96,6 +102,7 @@ public class Region : Node2D
 
     private void HandleTurnProcessing(int turn, Player currentPlayer, Player nextPlayer)
     {
+        if (Occupier != null && Occupier == currentPlayer) Occupier.GiveGold(Income);
         if (BattlePlan[Battle.BattleSide.Attacker].Count > 0)
         {
             BattleManager.Instance.CreateBattle(

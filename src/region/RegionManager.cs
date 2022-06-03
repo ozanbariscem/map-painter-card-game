@@ -51,7 +51,7 @@ public class RegionManager : Node2D
             for (int i = 0; i < width; i++)
             {
                 Region region = scene.Instance() as Region;
-                region.Scale = new Vector2(10, 10);
+                region.Scale = new Vector2(25, 25);
                 region.SetNeighbours(GetNeighbours(region.Id));
                 // Note that this would be completely irrelevant 
                 // If we were to have other region shapes than squares
@@ -59,7 +59,9 @@ public class RegionManager : Node2D
                 
                 regionWidth = border.Texture.GetWidth() * region.Scale.x;
                 regionHeight = border.Texture.GetHeight() * region.Scale.y;
-                region.GlobalPosition = new Vector2(regionWidth * i, regionHeight * j);
+                region.GlobalPosition = new Vector2(
+                    (regionWidth / 2f) + regionWidth * i,
+                    (regionHeight / 2f) + regionHeight * j);
 
                 unoccupiedRegions.Add(region.Id, region);
                 Regions.Add(region.Id, region);

@@ -26,13 +26,39 @@ texture = ExtResource( 2 )
 polygon = PoolVector2Array( 120, -120, 120, 120, -120, 120, -120, -120 )
 
 [node name="hud" type="Control" parent="."]
-margin_left = -116.0
+margin_left = -117.0
 margin_top = -116.0
+margin_right = 117.0
+margin_bottom = 116.0
 mouse_filter = 2
 script = ExtResource( 3 )
 
 [node name="Name" type="Label" parent="hud"]
-anchor_right = 1.0
+anchor_right = 0.5
 margin_bottom = 14.0
 text = "[region_name]"
+valign = 1
+
+[node name="Owner" type="Label" parent="hud"]
+anchor_right = 0.5
+margin_top = 14.0
+margin_bottom = 28.0
+text = "[owner_name]"
+valign = 1
+
+[node name="Cards" type="Label" parent="hud"]
+anchor_left = 0.5
+anchor_right = 1.0
+margin_bottom = 14.0
+text = "[cards_in_region]"
+align = 2
+valign = 1
+
+[node name="Income" type="Label" parent="hud"]
+anchor_left = 0.5
+anchor_right = 1.0
+margin_top = 14.0
+margin_bottom = 28.0
+text = "[income]"
+align = 2
 valign = 1

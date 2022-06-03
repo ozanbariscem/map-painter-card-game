@@ -47,8 +47,21 @@ public class Player : Node2D
         Id = idCount++;
         IsBot = isBot;
         Color = ColorUtils.GetRandomPlayerColor();
+        Name = IsBot ? $"Bot ({Id})" : "Player";
 
         AIBrain = new AIBrain(this);
+    }
+
+    public void GiveGold(ushort amount)
+    {
+        int total = Gold + amount;
+        Gold = (total < ushort.MaxValue) ? (ushort)total : ushort.MaxValue;
+    }
+
+    public void TakeGold(ushort amount)
+    {
+        int total = Gold - amount;
+        Gold = (total >= 0) ? (ushort)total : (ushort)0;
     }
 
     public void RequestTurnEnd()

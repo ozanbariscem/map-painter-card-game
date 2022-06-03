@@ -1,5 +1,5 @@
 ﻿using Godot;
-using System;
+using System.Linq;
 
 public class RegionHUD : Control
 {
@@ -8,6 +8,11 @@ public class RegionHUD : Control
     public static float transitionSpeed = 5f;
 
     private Label nameLabel;
+    private Label ownerLabel;
+
+    private Label cardsLabel;
+    private Label incomeLabel;
+
 
     private int transitionDirection;
     private State state;
@@ -17,6 +22,9 @@ public class RegionHUD : Control
     {
         Modulate = new Color(1, 1, 1, 0);
         nameLabel = GetNode("Name") as Label;
+        ownerLabel = GetNode("Owner") as Label;
+        cardsLabel = GetNode("Cards") as Label;
+        incomeLabel = GetNode("Income") as Label;
 
         Region.OnMouseEnter += HandleMouseEnter;
         Region.OnMouseExit += HandleMouseExit;
@@ -43,10 +51,14 @@ public class RegionHUD : Control
 
     private void UpdateHUD()
     {
-        nameLabel.Text =
+        nameLabel.Text = $"{region.Name}";
+        ownerLabel.Text = region.Owner != null ? $"Occupied by {region.Owner.Name}" : $"Unoccupied region";
+
+        cardsLabel.Text =
             $"{region.Id} " +
-            $"D: {region.BattlePlan[Battle.BattleSide.Defender].Count} " +
-            $"A: {region.BattlePlan[Battle.BattleSide.Attacker].Count}";
+            $"D: {region.BattlePlan[Battle.BattleSide.Defender].Count} ({region.BattlePlan[Battle.BattleSide.Defender].Values.Sum(x => x.Defence)})" +
+            $"A: {region.BattlePlan[Battle.BattleSide.Attacker].Count} ({region.BattlePlan[Battle.BattleSide.Defender].Values.Sum(x => x.Attack)})";
+        incomeLabel.Text = $"+{region.Income} Gold";
     }
 
     private void Transition(float delta)

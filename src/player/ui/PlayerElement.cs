@@ -28,18 +28,24 @@ public class PlayerElement : Control
 
     private void UpdateMenu()
     {
-        NameLabel.Text = $"{player.Name} ({player.Id})";
-        InfoLabel.Text = $"Player information goes here.";
+        NameLabel.Text = $"{player.Name}";
+        InfoLabel.Text = $"Gold: {player.Gold}";
+    }
+
+    private void HandlePlayerGoldChanged(Player player)
+    {
+        if (this.player != player) return;
+        UpdateMenu();
     }
 
     private void Subscribe()
     {
-
+        Player.OnGoldChanged += HandlePlayerGoldChanged;
     }
 
     private void Unsubscribe()
     {
         if (player == null) return;
-        
+        Player.OnGoldChanged -= HandlePlayerGoldChanged;
     }
 }

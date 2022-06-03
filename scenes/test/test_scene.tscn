@@ -22,8 +22,8 @@ SlowCameraWithZoom = true
 [node name="TurnManager" parent="." instance=ExtResource( 4 )]
 
 [node name="RegionManager2" parent="." instance=ExtResource( 2 )]
-MapWidth = 32
-MapHeight = 32
+MapWidth = 8
+MapHeight = 8
 
 [node name="PlayerManager" parent="." instance=ExtResource( 3 )]
 
